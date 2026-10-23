@@ -1,0 +1,12 @@
+# Local-only docs and task tracking (not needed by COPR)
+odd/
+corp-Sassech.md
+
+# IA
+.claude/
+.opencode/
+
+# Build outputs
+_build/
+*.src.rpm
+*.rpm
