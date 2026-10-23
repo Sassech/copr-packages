@@ -20,7 +20,7 @@ URL:            %{forgeurl}
 Source0:        %{forgeurl}/archive/%{commit}/sonora-%{commit}.tar.gz
 Source1:        %{name}-vendor-%{shortcommit}.tar.xz
 
-ExclusiveArch:  x86_64
+ExclusiveArch:  %{rust_arches}
 
 BuildRequires:  cargo-rpm-macros >= 26
 BuildRequires:  gcc

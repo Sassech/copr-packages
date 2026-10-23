@@ -1,7 +1,7 @@
 # copr-packages
 
 RPM packaging for the COPR project [`sassech/packages`](https://copr.fedorainfracloud.org/coprs/sassech/packages/)
-(Fedora 44, 45 and rawhide, x86_64). Versions are never pinned: each build
+(Fedora 44, 45 and rawhide, x86_64 and aarch64). Versions are never pinned: each build
 resolves the latest upstream tag or commit, and a GitHub workflow rebuilds
 packages when upstream changes.
 
@@ -14,7 +14,7 @@ sudo dnf install rmpc            # or rmpc-git, whatrust, sonora, ...
 |---|---|---|
 | `rmpc` / `rmpc-git` | [mierak/rmpc](https://github.com/mierak/rmpc) | latest release tag / latest commit |
 | `whatrust` / `whatrust-git` | [karem505/whatRust](https://github.com/karem505/whatRust) | latest release tag / latest commit |
-| `sonora` / `sonora-git` | [sonorahq/sonora](https://github.com/sonorahq/sonora) | latest release tag / latest commit (x86_64) |
+| `sonora` / `sonora-git` | [sonorahq/sonora](https://github.com/sonorahq/sonora) | latest release tag / latest commit |
 | `stremio-linux-shell` / `stremio-linux-shell-git` | [Stremio/stremio-linux-shell](https://github.com/Stremio/stremio-linux-shell) | latest release tag / latest commit |
 
 ## Layout
@@ -36,7 +36,7 @@ scripts/check-upstream.sh       compares upstream with COPR, triggers rebuilds
   Node.js is needed at build time. Installs the upstream desktop entry,
   AppStream metadata, icons and polkit action.
 - **sonora**: builds only the `sonora` workspace package; several crates come
-  from git repositories and are vendored as well. x86_64 only.
+  from git repositories and are vendored as well.
 - **stremio-linux-shell**: installs `/usr/bin/stremio` (a wrapper that sets
   `SERVER_PATH`) and the bundled streaming server, which runs on Node.js. It
   conflicts with the legacy Qt `stremio` package. Releases up to 1.2.2 look
