@@ -12,7 +12,7 @@ on:
   workflow_dispatch:
     inputs:
       package:
-        description: Package to check (or "all")
+        description: Space-separated packages to check (or "all")
         type: string
         default: all
       force:
@@ -60,7 +60,9 @@ jobs:
           PACKAGE: ${{ inputs.package }}
           FORCE: ${{ inputs.force && '1' || '0' }}
           DRY_RUN: ${{ inputs.dry_run && '1' || '0' }}
-        run: scripts/check-upstream.sh "${PACKAGE:-all}"
+        run: |
+          read -ra pkgs <<< "${PACKAGE:-all}"
+          scripts/check-upstream.sh "${pkgs[@]}"
 
       - name: Rebuild packages changed by the push
         if: github.event_name == 'push'
