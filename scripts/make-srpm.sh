@@ -25,6 +25,9 @@ TOPDIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 readonly TOPDIR
 readonly PACKAGER="${PACKAGER:-Sassech <lainstroop@gmail.com>}"
 
+# shellcheck source=scripts/upstream-lib.sh
+source "${TOPDIR}/scripts/upstream-lib.sh"
+
 ensure_tools() {
     local -a missing=()
     command -v git >/dev/null || missing+=(git-core)
@@ -37,27 +40,6 @@ ensure_tools() {
     [[ $(id -u) -eq 0 ]] || die "missing tools (${missing[*]}); install them or run as root"
     log "installing ${missing[*]}"
     dnf -y install "${missing[@]}"
-}
-
-# Print the value of a `%global <name> <value>` line from the spec.
-spec_global() {
-    awk -v n="$2" '$1 == "%global" && $2 == n { print $3; exit }' "$1"
-}
-
-# Latest stable tag (vX.Y.Z or X.Y.Z, pre-releases excluded), highest by version sort.
-latest_tag() {
-    git ls-remote --tags --refs "$1" \
-        | awk '{ sub("refs/tags/", "", $2); print $2 }' \
-        | grep -E '^v?[0-9]+(\.[0-9]+)*$' \
-        | sort -V | tail -n 1
-}
-
-# Commit a tag points to (peels annotated tags).
-tag_commit() {
-    local url="$1" tag="$2" out
-    out="$(git ls-remote "$url" "refs/tags/${tag}^{}" "refs/tags/${tag}")"
-    awk -v t="refs/tags/${tag}^{}" '$2 == t { print $1; found = 1; exit } END { exit !found }' <<<"$out" \
-        || awk 'NR == 1 { print $1 }' <<<"$out"
 }
 
 main() {
@@ -80,16 +62,11 @@ main() {
     manifest_dir="${manifest_dir:-.}"
 
     local tag base_version commit snapdate="" version
-    tag="$(latest_tag "$forgeurl")"
-    [[ -n $tag ]] || die "no stable tag found in $forgeurl"
-    base_version="${tag#v}"
-    if [[ $track == release ]]; then
-        commit="$(tag_commit "$forgeurl" "$tag")"
-        version="$base_version"
-    else
-        commit="$(git ls-remote "$forgeurl" HEAD | awk 'NR == 1 { print $1 }')"
-    fi
-    [[ $commit =~ ^[0-9a-f]{40}$ ]] || die "cannot resolve commit for $forgeurl ($track)"
+    resolve_upstream "$forgeurl" "$track" || die "upstream resolution failed for $forgeurl"
+    tag="$UPSTREAM_TAG"
+    base_version="$UPSTREAM_BASE"
+    commit="$UPSTREAM_COMMIT"
+    version="$base_version"
 
     local work
     work="$(mktemp -d)"
