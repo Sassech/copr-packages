@@ -16,12 +16,13 @@ sudo dnf install rmpc            # or rmpc-git, whatrust, sonora, ...
 | `whatrust` / `whatrust-git` | [karem505/whatRust](https://github.com/karem505/whatRust) | latest release tag / latest commit |
 | `sonora` / `sonora-git` | [sonorahq/sonora](https://github.com/sonorahq/sonora) | latest release tag / latest commit |
 | `stremio-linux-shell` / `stremio-linux-shell-git` | [Stremio/stremio-linux-shell](https://github.com/Stremio/stremio-linux-shell) | latest release tag / latest commit |
+| `noise-suppression-for-voice-ladspa` | [werman/noise-suppression-for-voice](https://github.com/werman/noise-suppression-for-voice) | latest release tag |
 
 ## Layout
 
 ```
 .copr/Makefile                  COPR make_srpm entry point
-scripts/make-srpm.sh            resolves upstream, vendors crates, builds the SRPM
+scripts/make-srpm.sh            resolves upstream, vendors crates (Rust only), builds the SRPM
 scripts/upstream-lib.sh         tag/commit resolution shared by both scripts
 scripts/check-upstream.sh       compares upstream with COPR, triggers rebuilds
 .github/workflows/copr-rebuild.yml  daily / push / manual rebuild workflow
@@ -41,3 +42,7 @@ scripts/check-upstream.sh       compares upstream with COPR, triggers rebuilds
   `SERVER_PATH`) and the bundled streaming server, which runs on Node.js. It
   conflicts with the legacy Qt `stremio` package. Releases up to 1.2.2 look
   up translations only in the build tree, so the UI shows English.
+- **noise-suppression-for-voice**: C++/CMake, nothing to vendor. Only the
+  LADSPA plugin is built (`%{_libdir}/ladspa/librnnoise_ladspa.so`, for the
+  PipeWire filter-chain module); the JUCE-based LV2/VST/VST3 plugins are off.
+  The COPR package produces a single `noise-suppression-for-voice-ladspa` RPM.

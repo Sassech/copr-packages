@@ -6,7 +6,8 @@
 # The spec declares, as plain %global lines:
 #   forgeurl            GitHub repository URL (https://github.com/<owner>/<repo>)
 #   srpm_track          "release" (latest stable vX.Y.Z tag) or "git" (default branch HEAD)
-#   cargo_manifest_dir  directory holding Cargo.toml/Cargo.lock ("." or e.g. "src-tauri")
+#   cargo_manifest_dir  directory holding Cargo.toml/Cargo.lock ("." or e.g. "src-tauri");
+#                       omit it for non-Rust packages (no Source1 is produced)
 #
 # This script resolves the upstream tag/commit at SRPM time (nothing is
 # hardcoded), downloads the GitHub archive (Source0), vendors all crates with
@@ -28,13 +29,14 @@ readonly PACKAGER="${PACKAGER:-Sassech <lainstroop@gmail.com>}"
 # shellcheck source=scripts/upstream-lib.sh
 source "${TOPDIR}/scripts/upstream-lib.sh"
 
+# ensure_tools <needs cargo: 0|1>
 ensure_tools() {
     local -a missing=()
     command -v git >/dev/null || missing+=(git-core)
     command -v curl >/dev/null || missing+=(curl)
     command -v tar >/dev/null || missing+=(tar)
     command -v xz >/dev/null || missing+=(xz)
-    command -v cargo >/dev/null || missing+=(cargo)
+    (($1 == 0)) || command -v cargo >/dev/null || missing+=(cargo)
     command -v rpmbuild >/dev/null || missing+=(rpm-build)
     ((${#missing[@]} == 0)) && return 0
     [[ $(id -u) -eq 0 ]] || die "missing tools (${missing[*]}); install them or run as root"
@@ -50,8 +52,6 @@ main() {
     [[ -f $spec ]] || die "spec not found: $1"
     spec="$(cd "$(dirname "$spec")" && pwd)/$(basename "$spec")"
 
-    ensure_tools
-
     local name forgeurl track manifest_dir
     name="$(basename "$spec" .spec)"
     forgeurl="$(spec_global "$spec" forgeurl)"
@@ -59,7 +59,8 @@ main() {
     manifest_dir="$(spec_global "$spec" cargo_manifest_dir)"
     [[ -n $forgeurl ]] || die "$spec: missing '%global forgeurl'"
     [[ $track == release || $track == git ]] || die "$spec: srpm_track must be release|git"
-    manifest_dir="${manifest_dir:-.}"
+
+    ensure_tools "$([[ -n $manifest_dir ]] && echo 1 || echo 0)"
 
     local tag base_version commit snapdate="" version
     resolve_upstream "$forgeurl" "$track" || die "upstream resolution failed for $forgeurl"
@@ -89,13 +90,15 @@ main() {
     curl -fsSL --retry 3 -o "$work/sources/$src0" "${forgeurl}/archive/${commit}/${src0}"
     tar -xzf "$work/sources/$src0" -C "$work/tree"
 
-    local crate_dir="$work/tree/${repo}-${commit}/${manifest_dir}"
-    [[ -f "$crate_dir/Cargo.lock" ]] || die "no Cargo.lock in ${manifest_dir}"
-    log "vendoring crates in ${manifest_dir}"
-    # The printed source config is kept so %prep can wire up git dependencies too.
-    (cd "$crate_dir" && cargo vendor --locked --versioned-dirs vendor >vendor-config.toml)
-    mv "$crate_dir/vendor-config.toml" "$crate_dir/vendor/"
-    tar -C "$crate_dir" -cJf "$work/sources/$src1" vendor
+    if [[ -n $manifest_dir ]]; then
+        local crate_dir="$work/tree/${repo}-${commit}/${manifest_dir}"
+        [[ -f "$crate_dir/Cargo.lock" ]] || die "no Cargo.lock in ${manifest_dir}"
+        log "vendoring crates in ${manifest_dir}"
+        # The printed source config is kept so %prep can wire up git dependencies too.
+        (cd "$crate_dir" && cargo vendor --locked --versioned-dirs vendor >vendor-config.toml)
+        mv "$crate_dir/vendor-config.toml" "$crate_dir/vendor/"
+        tar -C "$crate_dir" -cJf "$work/sources/$src1" vendor
+    fi
 
     local gen="$work/${name}.spec"
     {
