@@ -17,6 +17,7 @@ sudo dnf install rmpc            # or rmpc-git, whatrust, sonora, ...
 | `sonora` / `sonora-git` | [sonorahq/sonora](https://github.com/sonorahq/sonora) | latest release tag / latest commit |
 | `stremio-linux-shell` / `stremio-linux-shell-git` | [Stremio/stremio-linux-shell](https://github.com/Stremio/stremio-linux-shell) | latest release tag / latest commit |
 | `noise-suppression-for-voice-ladspa` | [werman/noise-suppression-for-voice](https://github.com/werman/noise-suppression-for-voice) | latest release tag |
+| `wl-clip-persist` | [Linus789/wl-clip-persist](https://github.com/Linus789/wl-clip-persist) | latest release tag |
 
 ## Layout
 
@@ -46,3 +47,6 @@ scripts/check-upstream.sh       compares upstream with COPR, triggers rebuilds
   LADSPA plugin is built (`%{_libdir}/ladspa/librnnoise_ladspa.so`, for the
   PipeWire filter-chain module); the JUCE-based LV2/VST/VST3 plugins are off.
   The COPR package produces a single `noise-suppression-for-voice-ladspa` RPM.
+- **wl-clip-persist**: installs only the binary; start it from the
+  compositor's autostart (e.g. `wl-clip-persist --clipboard regular`). Needs
+  a compositor with `ext-data-control-v1` or `wlr-data-control-unstable-v1`.
